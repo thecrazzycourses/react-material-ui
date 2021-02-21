@@ -17,3 +17,6 @@ npm install @material-ui/styles
 Create Theme.js and createMuiTheme Object and wrap your app with <ThemeProvider theme={theme}>
 Palette : Style for color
 Topography : Style for Text
+
+# Material UI Icons
+npm install @material-ui/icons

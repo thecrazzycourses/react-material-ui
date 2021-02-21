@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import useScrollTrigger from "@material-ui/core/useScrollTrigger";
-import {makeStyles} from "@material-ui/styles";
+import {makeStyles, useTheme} from "@material-ui/styles";
 import logo from '../../assets/logo.svg';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
@@ -10,6 +10,13 @@ import {Button} from "@material-ui/core";
 import {Link} from "react-router-dom";
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import useMediaQuery from "@material-ui/core/useMediaQuery";
+import SwipeableDrawer from "@material-ui/core/SwipeableDrawer";
+import IconButton from '@material-ui/core/IconButton';
+import MenuIcon from '@material-ui/icons/Menu';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 
 function ElevationScroll(props) {
     const {children} = props;
@@ -26,10 +33,22 @@ function ElevationScroll(props) {
 const useStyles = makeStyles(theme => ({
     toolbarMargin: {
         ...theme.mixins.toolbar,
-        marginBottom: "3em"
+        marginBottom: "3em",
+        [theme.breakpoints.down("md")]: {
+            marginBottom: "3em"
+        },
+        [theme.breakpoints.down("xs")]: {
+            marginBottom: "2em"
+        }
     },
     logo: {
-        height: "8em"
+        height: "8em",
+        [theme.breakpoints.down("md")]: {
+            height: "7em"
+        },
+        [theme.breakpoints.down("xs")]: {
+            height: "5.5em"
+        }
     },
     tabContainer: {
         marginLeft: "auto"
@@ -60,23 +79,60 @@ const useStyles = makeStyles(theme => ({
         "&:hover": {
             opacity: 1
         }
+    },
+    drawerIconContainer: {
+        marginLeft: "auto",
+        "&:hover": {
+            backgroundColor: "transparent"
+        }
+    },
+    drawerIcon: {
+        height: "50px",
+        width: "50px",
+    },
+    drawer: {
+        backgroundColor: theme.palette.common.blue
+    },
+    drawerItem: {
+        ...theme.typography.tab,
+        color: "white",
+        opacity: 0.7
+    },
+    estimate: {
+        backgroundColor: theme.palette.common.orange
+    },
+    drawerItemSelected: {
+        opacity: 1
     }
 }))
 
 const Header = (props) => {
     const classes = useStyles();
+    const theme = useTheme();
+    const iOS = process.browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const matches = useMediaQuery(theme.breakpoints.down("md"));
 
+
+    const [openDrawer, setOpenDrawer] = useState(false);
     const [value, setValue] = useState(0);
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const [open, setOpen] = React.useState(false);
-    const [selectedIndex, setSelectedIndex] = React.useState(0);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [openMenu, setOpenMenu] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
 
     const menuItemOptions = [
-        {name: "Services", link: "/"},
-        {name: "Custom Software Development", link: "/custom-software"},
-        {name: "Mobile App Development", link: "/mobile-apps"},
-        {name: "Website Development", link: "/website"}
-    ]
+        {name: "Services", link: "/services", activeIndex: 1, selectedIndex: 0},
+        {name: "Custom Software Development", link: "/custom-software", activeIndex: 1, selectedIndex: 1},
+        {name: "Mobile App Development", link: "/mobile-apps", activeIndex: 1, selectedIndex: 2},
+        {name: "Website Development", link: "/website", activeIndex: 1, selectedIndex: 3}
+    ];
+
+    const routes = [
+        {name: "Home", link: "/", activeIndex: 0},
+        {name: "Services", link: "/services", activeIndex: 1},
+        {name: "The Revolution", link: "/revolution", activeIndex: 2},
+        {name: "About Us", link: "/about", activeIndex: 3},
+        {name: "Contact Us", link: "/contact", activeIndex: 4}
+    ];
 
     const handleChange = (event, newValue) => {
         setValue(newValue);
@@ -84,126 +140,192 @@ const Header = (props) => {
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
-        setOpen(true);
+        setOpenMenu(true);
     };
 
     const handleMenuItemClick = (event, index) => {
-        setAnchorEl(event.currentTarget);
-        setOpen(true);
+        setAnchorEl(null);
+        setOpenMenu(true);
         setSelectedIndex(index);
     };
 
     const handleClose = () => {
         setAnchorEl(null);
-        setOpen(false);
+        setOpenMenu(false);
     };
 
     useEffect(() => {
-        switch (window.location.pathname) {
-            case "/":
-                if (value !== 0) {
-                    setValue(0);
-                }
-                break;
-            case "/services":
-                if (value !== 1) {
-                    setValue(1);
-                    setSelectedIndex(0);
-                }
-                break;
-            case "/custom-software":
-                if (value !== 1) {
-                    setValue(1);
-                    setSelectedIndex(1);
-                }
-                break;
-            case "/mobile-apps":
-                if (value !== 1) {
-                    setValue(1);
-                    setSelectedIndex(2);
-                }
-                break;
-            case "/website":
-                if (value !== 1) {
-                    setValue(1);
-                    setSelectedIndex(3);
-                }
-                break;
-            case "/revolution":
-                if (value !== 2) {
-                    setValue(2);
-                }
-                break;
-            case "/about":
-                if (value !== 3) {
-                    setValue(3);
-                }
-                break;
-            case "/contact":
-                if (value !== 4) {
-                    setValue(4);
-                }
-                break;
-            case "/estimate":
-                if (value !== 5) {
-                    setValue(5);
-                }
-                break;
-            default:
-                break;
-        }
-    }, [value])
+        [...menuItemOptions, ...routes].forEach(route => {
+            switch (window.location.pathname) {
+                case `${route.link}`:
+                    if (value !== route.activeIndex) {
+                        setValue(route.activeIndex);
+                        if (route.selectedIndex && route.selectedIndex !== selectedIndex) {
+                            setSelectedIndex(route.selectedIndex);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        });
+
+    }, [value, menuItemOptions, selectedIndex, routes])
+
+    const tabs = (
+        <React.Fragment>
+            <Tabs value={value} onChange={handleChange} className={classes.tabContainer}>
+                <Tab className={classes.tab} label="Home" component={Link} to="/"/>
+                <Tab className={classes.tab} label="Services" component={Link} to="/services"
+                     aria-owns={anchorEl ? "simple-menu" : undefined}
+                     aria-haspopup={openMenu ? "true" : undefined}
+                     onMouseOver={event => handleClick(event)}/>
+                <Tab className={classes.tab} label="The Revolution" component={Link} to="/revolution"/>
+                <Tab className={classes.tab} label="About Us" component={Link} to="/about"/>
+                <Tab className={classes.tab} label="Contact Us" component={Link} to="/contact"/>
+            </Tabs>
+            <Button color="secondary" variant="contained" className={classes.button}>Free Estimate</Button>
+            <Menu
+                id="simple-menu"
+                anchorEl={anchorEl}
+                open={openMenu}
+                onClose={handleClose}
+                MenuListProps={{onMouseLeave: handleClose}}
+                classes={{paper: classes.menu}}
+                elevation={0}
+            >
+                {menuItemOptions.map((option, index) => (
+                    <MenuItem key={index}
+                              classes={{root: classes.menuItem}}
+                              onClick={(event) => {
+                                  handleMenuItemClick(event, index);
+                                  setValue(index);
+                                  handleClose();
+                              }}
+                              component={Link}
+                              to={option.link}
+                              selected={index === selectedIndex && value === index}
+                    >
+                        {option.name}
+                    </MenuItem>
+                ))}
+            </Menu>
+        </React.Fragment>
+    );
+
+    const drawer = (
+        <React.Fragment>
+            <SwipeableDrawer disableBackdropTransition={!iOS}
+                             disableDiscovery={iOS}
+                             open={openDrawer}
+                             onClose={() => setOpenDrawer(false)}
+                             onOpen={() => setOpenDrawer(true)}
+                             classes={{paper: classes.drawer}}
+            >
+                <List disablePadding>
+                    <ListItem divider
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(0)
+                              }}
+                              button
+                              component={Link}
+                              selected={value === 0}
+                              to="/">
+                        <ListItemText
+                            className={value === 0 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography
+                        >Home</ListItemText>
+                    </ListItem>
+                    <ListItem divider
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(1)
+                              }}
+                              button
+                              component={Link}
+                              selected={value === 1}
+                              to="/services">
+                        <ListItemText
+                            className={value === 1 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography>Services</ListItemText>
+                    </ListItem>
+                    <ListItem divider
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(2)
+                              }}
+                              button
+                              component={Link}
+                              selected={value === 2}
+                              to="/revolution">
+                        <ListItemText
+                            className={value === 2 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography>The Revolution</ListItemText>
+                    </ListItem>
+                    <ListItem divider
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(3)
+                              }}
+                              button
+                              component={Link}
+                              selected={value === 3}
+                              to="/about">
+                        <ListItemText
+                            className={value === 3 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography>About Us</ListItemText>
+                    </ListItem>
+                    <ListItem divider
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(4)
+                              }}
+                              button
+                              component={Link}
+                              selected={value === 4}
+                              to="/contact">
+                        <ListItemText
+                            className={value === 4 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography>Contact Us</ListItemText>
+                    </ListItem>
+                    <ListItem className={classes.estimate}
+                              onClick={() => {
+                                  setOpenDrawer(false);
+                                  setValue(5)
+                              }} divider
+                              button
+                              component={Link}
+                              selected={value === 5}
+                              to="/estimate">
+                        <ListItemText
+                            className={value === 5 ? [classes.drawerItemSelected, classes.drawerItem] : classes.drawerItem}
+                            disableTypography>Estimate</ListItemText>
+                    </ListItem>
+                </List>
+            </SwipeableDrawer>
+
+            <IconButton className={classes.drawerIconContainer} onClick={() => setOpenDrawer(!openDrawer)}
+                        disableRipple>
+                <MenuIcon className={classes.drawerIcon}/>
+            </IconButton>
+        </React.Fragment>
+    );
 
     return (
         <React.Fragment>
             <ElevationScroll>
                 <AppBar position="fixed">
                     <Toolbar disableGutters>
-                        <Button component={Link} to="/" className={classes.logoContainer} onClick={() => setValue(0)}
+                        <Button component={Link} to="/"
+                                className={classes.logoContainer}
+                                onClick={() => setValue(0)}
                                 disableRipple={true}>
-                            <img src={logo} alt="logo" className={classes.logo}/>
+                            <img src={logo}
+                                 alt="logo"
+                                 className={classes.logo}/>
                         </Button>
-                        <Tabs value={value} onChange={handleChange} className={classes.tabContainer}>
-                            <Tab className={classes.tab} label="Home" component={Link} to="/"/>
-                            <Tab className={classes.tab} label="Services" component={Link} to="/services"
-                                 aria-owns={anchorEl ? "simple-menu" : undefined}
-                                 aria-haspopup={open ? "true" : undefined}
-                                 onMouseOver={event => handleClick(event)}/>
-                            <Menu
-                                id="simple-menu"
-                                anchorEl={anchorEl}
-                                open={open}
-                                onClose={handleClose}
-                                MenuListProps={{onMouseLeave: handleClose}}
-                                classes={{paper: classes.menu}}
-                                elevation={0}
-                            >
-                                {menuItemOptions.map((option, index) => (
-                                    <MenuItem key={index}
-                                              classes={{root: classes.menuItem}}
-                                              onClick={(event) => {
-                                                  handleMenuItemClick(event, index);
-                                                  setValue(1);
-                                                  handleClose()
-                                              }}
-                                              component={Link}
-                                              to={option.link}
-                                              selected={index === selectedIndex && value === 1}
-                                    >
-                                        {option.name}
-                                    </MenuItem>
-                                ))}
-                                {/*<MenuItem classes={{root: classes.menuItem}} onClick={() => {handleClose(); setValue(1)}} component={Link} to="/services">Services</MenuItem>
-                                <MenuItem classes={{root: classes.menuItem}} onClick={() => {handleClose(); setValue(1)}} component={Link} to="/custom-software">Custom Software Development</MenuItem>
-                                <MenuItem classes={{root: classes.menuItem}} onClick={() => {handleClose(); setValue(1)}} component={Link} to="/mobile-apps">Mobile App Development</MenuItem>
-                                <MenuItem classes={{root: classes.menuItem}} onClick={() => {handleClose(); setValue(1)}} component={Link} to="/website">Website Development</MenuItem>*/}
-                            </Menu>
-                            <Tab className={classes.tab} label="The Revolution" component={Link} to="/revolution"/>
-                            <Tab className={classes.tab} label="About Us" component={Link} to="/about"/>
-                            <Tab className={classes.tab} label="Contact Us" component={Link} to="/contact"/>
-                            <Tab className={classes.tab} label="Estimate" component={Link} to="/estimate"/>
-                        </Tabs>
-                        <Button color="secondary" variant="contained" className={classes.button}>Free Estimate</Button>
+                        {matches ? drawer : tabs}
                     </Toolbar>
                 </AppBar>
             </ElevationScroll>

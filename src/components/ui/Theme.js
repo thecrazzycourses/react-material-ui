@@ -23,7 +23,7 @@ const theme = createMuiTheme({
             fontWeight: 700,
             fontSize: "1rem",
         },
-        estimate: {
+        button: {
             fontFamily: "Pacifico",
             fontSize: "1rem",
             textTransform: "none",
